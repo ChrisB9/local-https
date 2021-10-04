@@ -1,9 +1,9 @@
 version: '3.5'
-services:
 
+services:
   proxy:
-    restart: always
-    image: jwilder/nginx-proxy
+    restart: unless-stopped
+    image: nginxproxy/nginx-proxy
     ports:
       - "80:80"
       - "443:443"
@@ -14,7 +14,7 @@ services:
     environment:
       - DHPARAM_GENERATION=false
     labels:
-      - com.github.kanti.local_https.nginx_proxy=true
+      - com.github.chrisb9.local_https.nginx_proxy
 
   companion:
     build: .
@@ -23,7 +23,6 @@ services:
       - ./.docker/data/letsencrypt:/etc/letsencrypt
       - ./.docker/data/nginx/certs:/etc/nginx/certs
     environment:
-      - DNS_CLOUDFLARE_EMAIL=${DNS_CLOUDFLARE_EMAIL:?must be set}
-      - DNS_CLOUDFLARE_API_KEY=${DNS_CLOUDFLARE_API_KEY:?must be set}
+      - DNS_CLIENT=${DNS_CLIENT:?must be set}
       - HTTPS_MAIN_DOMAIN=${HTTPS_MAIN_DOMAIN:?must be set}
-      - SLACK_TOKEN=${SLACK_TOKEN:-}
+      - CUSTOM_LABEL=com.github.chrisb9.local_https.nginx_proxy

@@ -4,18 +4,14 @@ declare(strict_types=1);
 namespace Kanti\LetsencryptClient\Certificate;
 
 use DateTimeImmutable;
-use function Safe\sprintf;
 
 final class SelfSignedCertificate
 {
     private const CN_NAME = 'kanti-local-https-client';
 
-    /**@var string */
-    private $certPathAndName;
 
-    public function __construct(string $certPathAndName)
+    public function __construct(private string $certPathAndName)
     {
-        $this->certPathAndName = $certPathAndName;
     }
 
     public function createIfNotExists(): bool

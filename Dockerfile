@@ -1,26 +1,33 @@
-FROM certbot/dns-cloudflare
+FROM neilpang/acme.sh
 
-RUN wget https://github.com/jwilder/docker-gen/releases/download/0.7.3/docker-gen-linux-amd64-0.7.3.tar.gz && \
-  tar xvzf docker-gen-linux-amd64-0.7.3.tar.gz && \
-  rm docker-gen-linux-amd64-0.7.3.tar.gz && \
-  mv docker-gen /usr/bin/ && \
-  chmod +x /usr/bin/docker-gen
+ARG PHP_VERSION=8.0
+ARG DOCKER_GEN_VERSION=0.7.7
 
-RUN apk add --update curl \
-    && mkdir -p /tmp/download \
-    && curl -L "https://download.docker.com/linux/static/stable/x86_64/docker-18.09.4.tgz" | tar -xz -C /tmp/download \
-    && mv /tmp/download/docker/docker /usr/local/bin/ \
-    && rm -rf /tmp/download \
-    && apk del curl \
-    && rm -rf /var/cache/apk/*
+ENV PHP_VERSION $PHP_VERSION
+ENV DOCKER_GEN_VERSION $DOCKER_GEN_VERSION
 
-RUN apk add --update \
-    php7 \
-    php7-json \
-    php7-pecl-yaml \
-    php7-curl \
-    composer \
-  && rm -rf /var/cache/apk/*
+ADD https://packages.whatwedo.ch/php-alpine.rsa.pub /etc/apk/keys/php-alpine.rsa.pub
+
+RUN apk --update-cache add ca-certificates && \
+    echo "https://packages.whatwedo.ch/php-alpine/v3.12/php-8.0" >> /etc/apk/repositories
+
+
+RUN apk add --update-cache \
+    	php8 \
+    	php8-curl \
+    	php8-phar \
+    	php8-openssl \
+    	php8-iconv \
+    	curl \
+    	docker && \
+    ln -s /usr/bin/php8 /usr/bin/php && \
+	ln -s /usr/bin/php-cgi8 /usr/bin/php-cgi && \
+	ln -s /usr/sbin/php-fpm8 /usr/sbin/php-fpm && \
+    curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer && \
+    wget "https://github.com/nginx-proxy/docker-gen/releases/download/$DOCKER_GEN_VERSION/docker-gen-linux-amd64-$DOCKER_GEN_VERSION.tar.gz" && \
+    tar xvzf "docker-gen-linux-amd64-$DOCKER_GEN_VERSION.tar.gz" && \
+    mv docker-gen /usr/local/bin/docker-gen && \
+    rm -rf /var/cache/apk/*
 
 COPY src /app/src
 COPY scripts /app/scripts

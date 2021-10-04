@@ -4,21 +4,14 @@ declare(strict_types=1);
 namespace Kanti\LetsencryptClient\Certificate;
 
 use DateTimeImmutable;
-use function Safe\sprintf;
 
 final class CertificateWithDomainCheck
 {
-    /**@var string */
-    private $certPathAndName;
     /** @var array<int, string> */
-    private $domains;
-    /** @var array<int, string> */
-    private $invalidDomains = [];
+    private array $invalidDomains = [];
 
-    public function __construct(string $certPathAndName, array $domains)
+    public function __construct(private string $certPathAndName, private array $domains)
     {
-        $this->certPathAndName = $certPathAndName;
-        $this->domains = $domains;
     }
 
     public function areAllDomainsValid(): bool

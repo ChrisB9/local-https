@@ -1,16 +1,16 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Kanti\LetsencryptClient;
 
-
 use Exception;
-use function Safe\sprintf;
+use function var_dump;
 
 final class NginxProxy
 {
     /** @var ?string */
-    private $dockerGenContainer;
+    private ?string $dockerGenContainer = null;
 
     public function __construct()
     {
@@ -19,19 +19,23 @@ final class NginxProxy
 
     public function restart(): void
     {
-        $result = shell_exec(sprintf(
-            "docker restart %s",
-            $this->getDockerGenContainer()
-        ));
+        $result = shell_exec(sprintf('docker restart %s', $this->getDockerGenContainer()));
         echo $result . PHP_EOL . 'Nginx Restarted.' . PHP_EOL;
     }
 
     private function getDockerGenContainer(): string
     {
+        $label = 'com.github.kanti.local_https.nginx_proxy';
+        if (getenv('CUSTOM_LABEL')) {
+            $label = (string)getenv('CUSTOM_LABEL');
+        }
         if ($this->dockerGenContainer === null) {
-            $result = shell_exec(sprintf('docker ps -f "label=com.github.kanti.local_https.nginx_proxy" -q'));
+            $result = shell_exec(sprintf('docker ps -f "label=%s" -q', $label));
             if (!$result) {
-                throw new Exception('ERROR NginxProxy Not found. did you not set the label=com.github.kanti.local_https.nginx_proxy on jwilder/nginx-proxy');
+                throw new Exception(sprintf(
+                    'Error: nginx-proxy not found. Did you set the label=%s on nginx-proxy/nginx-proxy?',
+                    $label,
+                ));
             }
             $this->dockerGenContainer = trim($result);
         }

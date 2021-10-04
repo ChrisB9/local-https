@@ -17,16 +17,14 @@ use Kanti\LetsencryptClient\Certificate\CertificateWithDomainCheck;
  */
 final class CertChecker
 {
-    /** @var array<int, string> */
-    private $invalidDomains = [];
+    /** @var string[] */
+    private array $invalidDomains = [];
 
     public function createIfNotExists(array $domains): bool
     {
         if (!$this->haveAllDomainsValidCertificates($domains)) {
             $certs = $this->createCertificatesWithDomains($this->invalidDomains);
-            foreach ($certs as $cert) {
-                $this->copyCertificateToDomains($cert, $cert->getDomains());
-            }
+            var_dump($certs);
             return true;
         }
         return false;
@@ -48,15 +46,5 @@ final class CertChecker
     private function createCertificatesWithDomains(array $domains): array
     {
         return LetsEncryptCertificate::fromDomainList($domains);
-    }
-
-    private function copyCertificateToDomains(LetsEncryptCertificate $cert, $domains): void
-    {
-        $crtPath = $cert->getCrtPath();
-        $keyPath = $cert->getKeyPath();
-        foreach ($domains as $domain) {
-            copy($crtPath, '/etc/nginx/certs/' . $domain . '.crt');
-            copy($keyPath, '/etc/nginx/certs/' . $domain . '.key');
-        }
     }
 }
