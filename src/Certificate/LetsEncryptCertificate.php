@@ -4,26 +4,38 @@ declare(strict_types=1);
 
 namespace Kanti\LetsencryptClient\Certificate;
 
+use JetBrains\PhpStorm\ArrayShape;
 use Kanti\LetsencryptClient\Environment;
 use RuntimeException;
 
+use function strtotime;
+
 final class LetsEncryptCertificate
 {
+    /** @var string[] */
+    public array $newlyCreatedDomains = [];
+
     public function __construct(private array $domains)
     {
         sort($this->domains);
         $domain = Environment::required('HTTPS_MAIN_DOMAIN');
-        $domains = sprintf(
+        $domainList = sprintf(
             '-d %s -d %s',
             $domain,
             implode(' -d ', $this->domains),
         );
         $dns = Environment::required('DNS_CLIENT');
+        $requiredUpdate = $this->isUpdateRequired();
+        if ($requiredUpdate === false) {
+            echo 'No update for certificate needed' . PHP_EOL;
+            return;
+        }
 
         $result = shell_exec(sprintf(
-            'acme.sh --issue --server letsencrypt --dns dns_%s %s --fullchain-file %s.crt --key-file %s.key',
+            'acme.sh %s --server letsencrypt --dns dns_%s %s --fullchain-file %s.crt --key-file %s.key',
+            $requiredUpdate ? '--renew --force' : '--issue',
             $dns,
-            $domains,
+            $domainList,
             '/etc/nginx/certs/' . $domain,
             '/etc/nginx/certs/' . $domain,
         ));
@@ -35,10 +47,13 @@ final class LetsEncryptCertificate
         }
     }
 
+    #[ArrayShape(['updated' => "string[]", 'certificates' => "array"])]
     public static function fromDomainList(array $domains): array
     {
-        new LetsEncryptCertificate($domains);
-        return self::getCurrentCertificateInformation();
+        return [
+            'updated' => (new LetsEncryptCertificate($domains))->newlyCreatedDomains,
+            'certificates' => self::getCurrentCertificateInformation(),
+        ];
     }
 
     private static function getCurrentCertificateInformation(): array
@@ -51,5 +66,25 @@ final class LetsEncryptCertificate
             $data[] = array_combine($head, explode('|', $certificates));
         }
         return $data;
+    }
+
+    private function isUpdateRequired(): ?bool
+    {
+        $certificates = self::getCurrentCertificateInformation();
+        $mainDomain = Environment::required('HTTPS_MAIN_DOMAIN');
+        foreach ($certificates as $certificate) {
+            if ($mainDomain !== $certificate['Main_Domain']) {
+                continue;
+            }
+            if (implode(',', $this->domains) !== $certificate['SAN_Domains']) {
+                $this->newlyCreatedDomains = array_diff($this->domains, explode(',', $certificate['SAN_Domains']));
+                return null;
+            }
+            if (strtotime('now + 1 week') >= strtotime($certificate['Renew'])) {
+                return true;
+            }
+            return false;
+        }
+        return null;
     }
 }

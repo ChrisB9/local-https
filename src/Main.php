@@ -24,7 +24,7 @@ final class Main
 
         $dataJsonReader = new DataJsonReader($mainDomain, 'var/data.json');
         $domains = $dataJsonReader->getDomains();
-        if ((new CertChecker())->createIfNotExists($domains)) {
+        if (CertChecker::createIfNotExists($domains)) {
             $this->nginxProxy->restart();
         }
     }
@@ -47,8 +47,7 @@ final class Main
         $cert = new SelfSignedCertificate('/etc/nginx/certs/default');
         if ($cert->createIfNotExists()) {
             NotificationManager::deliver(
-                sprintf(':selfie: CERTIFICATE self signed created %s.', $mainDomain),
-                'localHttps',
+                sprintf(':selfie: CERTIFICATE self signed created %s.', $mainDomain)
             );
             $this->nginxProxy->restart();
         }

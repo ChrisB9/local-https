@@ -33,11 +33,10 @@ COPY src /app/src
 COPY scripts /app/scripts
 COPY templates /app/templates
 COPY composer.json /app/
-COPY composer.lock /app/
 
 WORKDIR /app
 
-RUN composer install --no-dev -n
+RUN composer update --no-dev -n
 
 ENTRYPOINT ["php", "/app/scripts/entrypoint.php"]
 

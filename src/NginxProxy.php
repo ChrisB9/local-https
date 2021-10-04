@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Kanti\LetsencryptClient;
 
 use Exception;
+use function sleep;
 use function var_dump;
 
 final class NginxProxy
@@ -30,6 +31,7 @@ final class NginxProxy
             $label = (string)getenv('CUSTOM_LABEL');
         }
         if ($this->dockerGenContainer === null) {
+            sleep(5);
             $result = shell_exec(sprintf('docker ps -f "label=%s" -q', $label));
             if (!$result) {
                 throw new Exception(sprintf(

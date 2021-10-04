@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Kanti\LetsencryptClient\Notification;
@@ -24,9 +25,6 @@ final class NotificationManager
         };
         if (!$class) {
             return;
-        }
-        if ($class === MattermostNotification::class && !$channel) {
-            throw new \Exception('Mattermost requires a channel to send notification');
         }
         $notification = new $class;
         assert($notification instanceof AbstractNotification);

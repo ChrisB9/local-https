@@ -18,14 +18,15 @@ abstract class AbstractNotification
 {
     abstract public function sendNotification(array $payload);
 
-    protected function send(string $url, array $payload): void
+    protected function send(string $url, array $payload, bool $prependWithPayload = false): void
     {
         $curl = curl_init();
 
+        $data = json_encode($payload, JSON_THROW_ON_ERROR);
         curl_setopt_array($curl, [
             CURLOPT_URL => $url,
             CURLOPT_CUSTOMREQUEST => 'POST',
-            CURLOPT_POSTFIELDS => json_encode($payload),
+            CURLOPT_POSTFIELDS => $prependWithPayload ? ('payload=' . $data) : $data,
         ]);
 
         curl_exec($curl);
